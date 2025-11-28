@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Bilingual Calendar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #f3f4f6;
+        }
+
+        /* smooth fade for interactions */
+        .interactive-text {
+            transition: all 0.2s ease;
+        }
+        .interactive-text:active {
+            transform: scale(0.95);
+        }
+        
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: 1px;
+            background-color: #e5e7eb; /* Border color */
+            border: 1px solid #e5e7eb;
+        }
+
+        .calendar-cell {
+            background-color: white;
+            min-height: 100px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+
+    <!-- Main Container -->
+    <div class="bg-white rounded-2xl shadow-xl overflow-hidden w-full max-w-4xl border border-gray-100">
+        
+        <!-- Header: Month and Year -->
+        <div class="bg-indigo-600 p-8 text-white text-center cursor-pointer hover:bg-indigo-700 transition-colors relative group" id="month-header">
+            <div class="absolute top-4 right-4 opacity-50 text-xs flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                </svg>
+                Click text to listen
+            </div>
+            <h1 class="text-4xl md:text-5xl font-bold flex flex-col md:flex-row items-center justify-center gap-2 interactive-text">
+                <span id="month-name">Month</span>
+                <span id="year-number" class="font-light opacity-90">Year</span>
+            </h1>
+            <p class="text-indigo-200 mt-2 text-sm hidden group-hover:block transition-opacity">
+                (Click to hear pronunciation)
+            </p>
+        </div>
+
+        <!-- Weekday Headers -->
+        <div class="grid grid-cols-7 bg-gray-50 border-b border-gray-200">
+            <!-- Weekdays injected by JS -->
+        </div>
+
+        <!-- Calendar Days Grid -->
+        <div class="calendar-grid bg-gray-200" id="days-grid">
+            <!-- Days injected by JS -->
+        </div>
+    </div>
+
+    <!-- Notification Toast (Hidden by default) -->
+    <div id="toast" class="fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg opacity-0 transition-opacity duration-300 pointer-events-none">
+        Playing audio...
+    </div>
+
+    <script>
+        // Data for Translations and Speech
+        const monthData = [
+            { en: "January", zh: "一月" },
+            { en: "February", zh: "二月" },
+            { en: "March", zh: "三月" },
+            { en: "April", zh: "四月" },
+            { en: "May", zh: "五月" },
+            { en: "June", zh: "六月" },
+            { en: "July", zh: "七月" },
+            { en: "August", zh: "八月" },
+            { en: "September", zh: "九月" },
+            { en: "October", zh: "十月" },
+            { en: "November", zh: "十一月" },
+            { en: "December", zh: "十二月" }
+        ];
+
+        const weekData = [
+            { en: "Sunday", zh: "星期日" },
+            { en: "Monday", zh: "星期一" },
+            { en: "Tuesday", zh: "星期二" },
+            { en: "Wednesday", zh: "星期三" },
+            { en: "Thursday", zh: "星期四" },
+            { en: "Friday", zh: "星期五" },
+            { en: "Saturday", zh: "星期六" }
+        ];
+
+        // State
+        let currentDate = new Date();
+
+        // Helper: Get ordinal suffix (st, nd, rd, th)
+        function getOrdinal(n) {
+            const s = ["th", "st", "nd", "rd"];
+            const v = n % 100;
+            return n + (s[(v - 20) % 10] || s[v] || s[0]);
+        }
+
+        // Speech Synthesis Helper
+        function speak(englishText, chineseText) {
+            // Cancel any currently playing speech
+            window.speechSynthesis.cancel();
+            showToast();
+
+            // English Utterance
+            const enUtterance = new SpeechSynthesisUtterance(englishText);
+            enUtterance.lang = 'en-US';
+            enUtterance.rate = 0.9; 
+
+            // Chinese Utterance
+            const zhUtterance = new SpeechSynthesisUtterance(chineseText);
+            zhUtterance.lang = 'zh-CN';
+            zhUtterance.rate = 0.9;
+
+            // Chain them
+            window.speechSynthesis.speak(enUtterance);
+            
+            const pause = new SpeechSynthesisUtterance('');
+            pause.pause = 0.1;
+            window.speechSynthesis.speak(pause);
+
+            window.speechSynthesis.speak(zhUtterance);
+        }
+
+        function showToast() {
+            const toast = document.getElementById('toast');
+            toast.classList.remove('opacity-0');
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+            }, 3000);
+        }
+
+        function initCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            const todayDay = currentDate.getDate();
+
+            // Update Header
+            const monthEl = document.getElementById('month-name');
+            const yearEl = document.getElementById('year-number');
+            const headerContainer = document.getElementById('month-header');
+
+            monthEl.textContent = monthData[month].en;
+            yearEl.textContent = year;
+
+            // Header Click Event
+            headerContainer.onclick = () => {
+                const enText = `${monthData[month].en} ${year}`;
+                const zhText = `${year}年 ${monthData[month].zh}`;
+                speak(enText, zhText);
+            };
+
+            // Render Weekdays
+            const weekContainer = document.querySelector('.grid-cols-7');
+            weekContainer.innerHTML = ''; // Clear prev
+            
+            weekData.forEach(day => {
+                const div = document.createElement('div');
+                div.className = "py-4 text-center text-sm font-bold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-indigo-50 hover:text-indigo-600 transition-colors select-none";
+                div.textContent = day.en;
+                div.onclick = () => speak(day.en, day.zh);
+                weekContainer.appendChild(div);
+            });
+
+            // Calculate Calendar Grid
+            const daysGrid = document.getElementById('days-grid');
+            daysGrid.innerHTML = ''; // Clear prev
+
+            const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0 (Sun) - 6 (Sat)
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            // Padding for days before the 1st
+            for (let i = 0; i < firstDayOfMonth; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.className = "calendar-cell bg-gray-50";
+                daysGrid.appendChild(emptyCell);
+            }
+
+            // Days
+            for (let d = 1; d <= daysInMonth; d++) {
+                const cell = document.createElement('div');
+                const isToday = (d === todayDay);
+                
+                // Base Classes
+                let classes = "calendar-cell relative p-2 flex flex-col justify-between transition-colors duration-200 cursor-pointer ";
+                
+                if (isToday) {
+                    classes += "bg-indigo-600 text-white shadow-inner hover:bg-indigo-700 ";
+                } else {
+                    classes += "text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 ";
+                }
+
+                cell.className = classes;
+
+                // Day Number
+                const numberSpan = document.createElement('span');
+                numberSpan.className = isToday ? "text-2xl font-bold" : "text-xl font-semibold";
+                numberSpan.textContent = d;
+                
+                // "Today" label for the current day box
+                if (isToday) {
+                    const label = document.createElement('span');
+                    label.textContent = "Today";
+                    label.className = "text-xs uppercase tracking-wide opacity-80 font-bold self-end";
+                    cell.appendChild(label);
+                }
+
+                // Click Event Logic
+                cell.onclick = () => {
+                    // Construct Date info
+                    const thisDate = new Date(year, month, d);
+                    const dayIndex = thisDate.getDay();
+                    const dayNameEn = weekData[dayIndex].en;
+                    const dayNameZh = weekData[dayIndex].zh;
+                    const ordinalDate = getOrdinal(d);
+
+                    // Base Strings
+                    // EN: "Monday, November 3rd, 2025"
+                    const fullDateEn = `${dayNameEn}, ${monthData[month].en} ${ordinalDate}, ${year}`;
+                    // ZH: "2025年 十一月 3日 星期一"
+                    const fullDateZh = `${year}年 ${monthData[month].zh}${d}日 ${dayNameZh}`;
+
+                    let enSpeech = fullDateEn;
+                    let zhSpeech = fullDateZh;
+
+                    if (isToday) {
+                        enSpeech = `Today is ${fullDateEn}`;
+                        zhSpeech = `今天是 ${fullDateZh}`;
+                    } else if (d === todayDay - 1) {
+                        enSpeech = `Yesterday was ${fullDateEn}`;
+                        zhSpeech = `昨天是 ${fullDateZh}`;
+                    } else if (d === todayDay + 1) {
+                        enSpeech = `Tomorrow is ${fullDateEn}`;
+                        zhSpeech = `明天是 ${fullDateZh}`;
+                    }
+
+                    speak(enSpeech, zhSpeech);
+                };
+
+                // Insert number at top left
+                cell.insertBefore(numberSpan, cell.firstChild);
+                daysGrid.appendChild(cell);
+            }
+        }
+
+        // Auto-update logic
+        function checkDateChange() {
+            const now = new Date();
+            // If the date (day, month or year) has changed compared to what we stored
+            if (now.getDate() !== currentDate.getDate() || 
+                now.getMonth() !== currentDate.getMonth() || 
+                now.getFullYear() !== currentDate.getFullYear()) {
+                
+                currentDate = now;
+                initCalendar();
+            }
+        }
+
+        // Initialize
+        initCalendar();
+
+        // Check for date change every minute
+        setInterval(checkDateChange, 60000);
+
+    </script>
+</body>
+</html>
