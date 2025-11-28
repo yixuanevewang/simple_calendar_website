@@ -2,280 +2,293 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive Bilingual Calendar</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Interactive Learning Calendar</title>
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap');
-        
-        body {
-            font-family: 'Nunito', sans-serif;
-            background-color: #f3f4f6;
-        }
+    
+    <!-- React and ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-        /* smooth fade for interactions */
-        .interactive-text {
-            transition: all 0.2s ease;
+    <style>
+        body {
+            background-color: #f0f9ff;
+            touch-action: manipulation; /* Improves touch response */
         }
-        .interactive-text:active {
-            transform: scale(0.95);
-        }
-        
         .calendar-grid {
             display: grid;
-            grid-template-columns: repeat(7, minmax(0, 1fr));
-            gap: 1px;
-            background-color: #e5e7eb; /* Border color */
-            border: 1px solid #e5e7eb;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.5rem;
         }
-
-        .calendar-cell {
-            background-color: white;
-            min-height: 100px;
+        /* Hide scrollbar for clean look */
+        ::-webkit-scrollbar {
+            display: none;
+        }
+        /* Prevent text selection to make it feel more like an app */
+        .no-select {
+            user-select: none;
+            -webkit-user-select: none;
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col items-center justify-center p-4">
+<body>
+    <div id="root"></div>
 
-    <!-- Main Container -->
-    <div class="bg-white rounded-2xl shadow-xl overflow-hidden w-full max-w-4xl border border-gray-100">
-        
-        <!-- Header: Month and Year -->
-        <div class="bg-indigo-600 p-8 text-white text-center cursor-pointer hover:bg-indigo-700 transition-colors relative group" id="month-header">
-            <div class="absolute top-4 right-4 opacity-50 text-xs flex items-center gap-1">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                </svg>
-                Click text to listen
-            </div>
-            <h1 class="text-4xl md:text-5xl font-bold flex flex-col md:flex-row items-center justify-center gap-2 interactive-text">
-                <span id="month-name">Month</span>
-                <span id="year-number" class="font-light opacity-90">Year</span>
-            </h1>
-            <p class="text-indigo-200 mt-2 text-sm hidden group-hover:block transition-opacity">
-                (Click to hear pronunciation)
-            </p>
-        </div>
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
 
-        <!-- Weekday Headers -->
-        <div class="grid grid-cols-7 bg-gray-50 border-b border-gray-200">
-            <!-- Weekdays injected by JS -->
-        </div>
-
-        <!-- Calendar Days Grid -->
-        <div class="calendar-grid bg-gray-200" id="days-grid">
-            <!-- Days injected by JS -->
-        </div>
-    </div>
-
-    <!-- Notification Toast (Hidden by default) -->
-    <div id="toast" class="fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg opacity-0 transition-opacity duration-300 pointer-events-none">
-        Playing audio...
-    </div>
-
-    <script>
-        // Data for Translations and Speech
-        const monthData = [
-            { en: "January", zh: "一月" },
-            { en: "February", zh: "二月" },
-            { en: "March", zh: "三月" },
-            { en: "April", zh: "四月" },
-            { en: "May", zh: "五月" },
-            { en: "June", zh: "六月" },
-            { en: "July", zh: "七月" },
-            { en: "August", zh: "八月" },
-            { en: "September", zh: "九月" },
-            { en: "October", zh: "十月" },
-            { en: "November", zh: "十一月" },
-            { en: "December", zh: "十二月" }
+        // Data Helpers
+        const WEEKDAYS = [
+            { en: 'Sunday', zh: '星期日' },
+            { en: 'Monday', zh: '星期一' },
+            { en: 'Tuesday', zh: '星期二' },
+            { en: 'Wednesday', zh: '星期三' },
+            { en: 'Thursday', zh: '星期四' },
+            { en: 'Friday', zh: '星期五' },
+            { en: 'Saturday', zh: '星期六' }
         ];
 
-        const weekData = [
-            { en: "Sunday", zh: "星期日" },
-            { en: "Monday", zh: "星期一" },
-            { en: "Tuesday", zh: "星期二" },
-            { en: "Wednesday", zh: "星期三" },
-            { en: "Thursday", zh: "星期四" },
-            { en: "Friday", zh: "星期五" },
-            { en: "Saturday", zh: "星期六" }
+        const MONTHS = [
+            { en: 'January', zh: '一月' },
+            { en: 'February', zh: '二月' },
+            { en: 'March', zh: '三月' },
+            { en: 'April', zh: '四月' },
+            { en: 'May', zh: '五月' },
+            { en: 'June', zh: '六月' },
+            { en: 'July', zh: '七月' },
+            { en: 'August', zh: '八月' },
+            { en: 'September', zh: '九月' },
+            { en: 'October', zh: '十月' },
+            { en: 'November', zh: '十一月' },
+            { en: 'December', zh: '十二月' }
         ];
 
-        // State
-        let currentDate = new Date();
+        // Speech Helper Function
+        const speak = (textEn, textZh) => {
+            if (!window.speechSynthesis) return;
 
-        // Helper: Get ordinal suffix (st, nd, rd, th)
-        function getOrdinal(n) {
-            const s = ["th", "st", "nd", "rd"];
-            const v = n % 100;
-            return n + (s[(v - 20) % 10] || s[v] || s[0]);
-        }
-
-        // Speech Synthesis Helper
-        function speak(englishText, chineseText) {
-            // Cancel any currently playing speech
+            // Cancel any current speech
             window.speechSynthesis.cancel();
-            showToast();
 
             // English Utterance
-            const enUtterance = new SpeechSynthesisUtterance(englishText);
-            enUtterance.lang = 'en-US';
-            enUtterance.rate = 0.9; 
+            const utteranceEn = new SpeechSynthesisUtterance(textEn);
+            utteranceEn.lang = 'en-US';
+            utteranceEn.rate = 0.8; // Slower speed
 
             // Chinese Utterance
-            const zhUtterance = new SpeechSynthesisUtterance(chineseText);
-            zhUtterance.lang = 'zh-CN';
-            zhUtterance.rate = 0.9;
+            const utteranceZh = new SpeechSynthesisUtterance(textZh);
+            utteranceZh.lang = 'zh-CN';
+            utteranceZh.rate = 0.8; 
 
-            // Chain them
-            window.speechSynthesis.speak(enUtterance);
-            
-            const pause = new SpeechSynthesisUtterance('');
-            pause.pause = 0.1;
-            window.speechSynthesis.speak(pause);
+            // Chain them: Play Chinese only after English finishes
+            // This fixes the issue on iOS/Android where they overlap or cancel out
+            utteranceEn.onend = () => {
+                window.speechSynthesis.speak(utteranceZh);
+            };
 
-            window.speechSynthesis.speak(zhUtterance);
-        }
+            window.speechSynthesis.speak(utteranceEn);
+        };
 
-        function showToast() {
-            const toast = document.getElementById('toast');
-            toast.classList.remove('opacity-0');
-            setTimeout(() => {
-                toast.classList.add('opacity-0');
-            }, 3000);
-        }
+        const App = () => {
+            const [now, setNow] = useState(new Date());
 
-        function initCalendar() {
-            const year = currentDate.getFullYear();
-            const month = currentDate.getMonth();
-            const todayDay = currentDate.getDate();
+            // Update time every minute to catch midnight transitions
+            useEffect(() => {
+                const timer = setInterval(() => {
+                    setNow(new Date());
+                }, 60000);
+                return () => clearInterval(timer);
+            }, []);
 
-            // Update Header
-            const monthEl = document.getElementById('month-name');
-            const yearEl = document.getElementById('year-number');
-            const headerContainer = document.getElementById('month-header');
+            const currentYear = now.getFullYear();
+            const currentMonthIndex = now.getMonth();
+            const currentDay = now.getDate();
 
-            monthEl.textContent = monthData[month].en;
-            yearEl.textContent = year;
+            // Calendar Logic
+            const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
+            const getFirstDayOfMonth = (year, month) => new Date(year, month, 1).getDay();
 
-            // Header Click Event
-            headerContainer.onclick = () => {
-                const enText = `${monthData[month].en} ${year}`;
-                const zhText = `${year}年 ${monthData[month].zh}`;
+            const daysInMonth = getDaysInMonth(currentYear, currentMonthIndex);
+            const startDay = getFirstDayOfMonth(currentYear, currentMonthIndex);
+
+            // Generate calendar cells
+            const blanks = Array(startDay).fill(null);
+            const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+            const totalSlots = [...blanks, ...days];
+
+            // Date Comparison Helpers
+            const isToday = (day) => {
+                return day === currentDay;
+            };
+
+            const isYesterday = (day) => {
+                const checkDate = new Date(currentYear, currentMonthIndex, day);
+                const yesterday = new Date(now);
+                yesterday.setDate(now.getDate() - 1);
+                return checkDate.toDateString() === yesterday.toDateString();
+            };
+
+            const isTomorrow = (day) => {
+                const checkDate = new Date(currentYear, currentMonthIndex, day);
+                const tomorrow = new Date(now);
+                tomorrow.setDate(now.getDate() + 1);
+                return checkDate.toDateString() === tomorrow.toDateString();
+            };
+
+            // Click Handlers
+            const handleHeaderClick = () => {
+                const enText = `${MONTHS[currentMonthIndex].en} ${currentYear}`;
+                const zhText = `${currentYear}年 ${MONTHS[currentMonthIndex].zh}`;
                 speak(enText, zhText);
             };
 
-            // Render Weekdays
-            const weekContainer = document.querySelector('.grid-cols-7');
-            weekContainer.innerHTML = ''; // Clear prev
-            
-            weekData.forEach(day => {
-                const div = document.createElement('div');
-                div.className = "py-4 text-center text-sm font-bold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-indigo-50 hover:text-indigo-600 transition-colors select-none";
-                div.textContent = day.en;
-                div.onclick = () => speak(day.en, day.zh);
-                weekContainer.appendChild(div);
-            });
+            const handleWeekdayClick = (index) => {
+                speak(WEEKDAYS[index].en, WEEKDAYS[index].zh);
+            };
 
-            // Calculate Calendar Grid
-            const daysGrid = document.getElementById('days-grid');
-            daysGrid.innerHTML = ''; // Clear prev
+            const handleDateClick = (day) => {
+                if (!day) return;
 
-            const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0 (Sun) - 6 (Sat)
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-            // Padding for days before the 1st
-            for (let i = 0; i < firstDayOfMonth; i++) {
-                const emptyCell = document.createElement('div');
-                emptyCell.className = "calendar-cell bg-gray-50";
-                daysGrid.appendChild(emptyCell);
-            }
-
-            // Days
-            for (let d = 1; d <= daysInMonth; d++) {
-                const cell = document.createElement('div');
-                const isToday = (d === todayDay);
+                const dateObj = new Date(currentYear, currentMonthIndex, day);
+                const weekdayIndex = dateObj.getDay();
                 
-                // Base Classes
-                let classes = "calendar-cell relative p-2 flex flex-col justify-between transition-colors duration-200 cursor-pointer ";
-                
-                if (isToday) {
-                    classes += "bg-indigo-600 text-white shadow-inner hover:bg-indigo-700 ";
-                } else {
-                    classes += "text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 ";
-                }
-
-                cell.className = classes;
-
-                // Day Number
-                const numberSpan = document.createElement('span');
-                numberSpan.className = isToday ? "text-2xl font-bold" : "text-xl font-semibold";
-                numberSpan.textContent = d;
-                
-                // "Today" label for the current day box
-                if (isToday) {
-                    const label = document.createElement('span');
-                    label.textContent = "Today";
-                    label.className = "text-xs uppercase tracking-wide opacity-80 font-bold self-end";
-                    cell.appendChild(label);
-                }
-
-                // Click Event Logic
-                cell.onclick = () => {
-                    // Construct Date info
-                    const thisDate = new Date(year, month, d);
-                    const dayIndex = thisDate.getDay();
-                    const dayNameEn = weekData[dayIndex].en;
-                    const dayNameZh = weekData[dayIndex].zh;
-                    const ordinalDate = getOrdinal(d);
-
-                    // Base Strings
-                    // EN: "Monday, November 3rd, 2025"
-                    const fullDateEn = `${dayNameEn}, ${monthData[month].en} ${ordinalDate}, ${year}`;
-                    // ZH: "2025年 十一月 3日 星期一"
-                    const fullDateZh = `${year}年 ${monthData[month].zh}${d}日 ${dayNameZh}`;
-
-                    let enSpeech = fullDateEn;
-                    let zhSpeech = fullDateZh;
-
-                    if (isToday) {
-                        enSpeech = `Today is ${fullDateEn}`;
-                        zhSpeech = `今天是 ${fullDateZh}`;
-                    } else if (d === todayDay - 1) {
-                        enSpeech = `Yesterday was ${fullDateEn}`;
-                        zhSpeech = `昨天是 ${fullDateZh}`;
-                    } else if (d === todayDay + 1) {
-                        enSpeech = `Tomorrow is ${fullDateEn}`;
-                        zhSpeech = `明天是 ${fullDateZh}`;
-                    }
-
-                    speak(enSpeech, zhSpeech);
+                // Helper to get ordinal suffix (st, nd, rd, th)
+                const getOrdinal = (n) => {
+                    const s = ["th", "st", "nd", "rd"];
+                    const v = n % 100;
+                    return n + (s[(v - 20) % 10] || s[v] || s[0]);
                 };
 
-                // Insert number at top left
-                cell.insertBefore(numberSpan, cell.firstChild);
-                daysGrid.appendChild(cell);
-            }
-        }
+                const dateStringEn = `${MONTHS[currentMonthIndex].en} ${getOrdinal(day)}, ${currentYear}`;
+                // Chinese date format: X年 X月 X日
+                const dateStringZh = `${currentYear}年${MONTHS[currentMonthIndex].zh}${day}日`;
+                const weekdayEn = WEEKDAYS[weekdayIndex].en;
+                const weekdayZh = WEEKDAYS[weekdayIndex].zh;
 
-        // Auto-update logic
-        function checkDateChange() {
-            const now = new Date();
-            // If the date (day, month or year) has changed compared to what we stored
-            if (now.getDate() !== currentDate.getDate() || 
-                now.getMonth() !== currentDate.getMonth() || 
-                now.getFullYear() !== currentDate.getFullYear()) {
-                
-                currentDate = now;
-                initCalendar();
-            }
-        }
+                if (isToday(day)) {
+                    speak(
+                        `Today is ${weekdayEn}, ${dateStringEn}`, 
+                        `今天是${weekdayZh}, ${dateStringZh}`
+                    );
+                } else if (isYesterday(day)) {
+                    speak(
+                        `Yesterday was ${weekdayEn}, ${dateStringEn}`, 
+                        `昨天是${weekdayZh}, ${dateStringZh}`
+                    );
+                } else if (isTomorrow(day)) {
+                    speak(
+                        `Tomorrow is ${weekdayEn}, ${dateStringEn}`, 
+                        `明天是${weekdayZh}, ${dateStringZh}`
+                    );
+                } else {
+                    // Standard date reading
+                    speak(
+                        `${weekdayEn}, ${dateStringEn}`, 
+                        `${weekdayZh}, ${dateStringZh}`
+                    );
+                }
+            };
 
-        // Initialize
-        initCalendar();
+            return (
+                <div className="min-h-screen flex flex-col items-center justify-start py-6 px-2 sm:px-4 no-select">
+                    
+                    {/* Header Card */}
+                    <div 
+                        onClick={handleHeaderClick}
+                        className="bg-white w-full max-w-lg rounded-2xl shadow-lg p-6 mb-4 text-center cursor-pointer hover:bg-blue-50 transition-colors active:scale-95 transform duration-150"
+                    >
+                        <h1 className="text-4xl sm:text-5xl font-bold text-slate-800">
+                            {MONTHS[currentMonthIndex].en}
+                        </h1>
+                        <h2 className="text-2xl sm:text-3xl text-slate-500 mt-2 font-medium">
+                            {currentYear}
+                        </h2>
+                        <p className="text-xs text-slate-300 mt-2">(Tap to listen / 点击听)</p>
+                    </div>
 
-        // Check for date change every minute
-        setInterval(checkDateChange, 60000);
+                    {/* Calendar Grid Container */}
+                    <div className="bg-white w-full max-w-lg rounded-2xl shadow-xl overflow-hidden">
+                        
+                        {/* Weekday Headers */}
+                        <div className="grid grid-cols-7 bg-slate-100 border-b border-slate-200">
+                            {WEEKDAYS.map((day, index) => (
+                                <div 
+                                    key={day.en}
+                                    onClick={() => handleWeekdayClick(index)}
+                                    className="h-14 sm:h-16 flex items-center justify-center p-1 cursor-pointer hover:bg-blue-100 transition-colors"
+                                >
+                                    {/* Responsive text: Small on mobile to fit "Wednesday", larger on desktop */}
+                                    <span className="text-[0.65rem] sm:text-sm font-bold text-slate-600 uppercase tracking-tight break-words text-center leading-tight">
+                                        {day.en}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
 
+                        {/* Days Grid */}
+                        <div className="grid grid-cols-7 gap-px bg-slate-200">
+                            {totalSlots.map((day, index) => {
+                                // Determine styling based on date status
+                                const today = day && isToday(day);
+                                const clickable = !!day;
+                                
+                                let bgClass = "bg-white"; // Default
+                                let textClass = "text-slate-700";
+                                
+                                if (today) {
+                                    bgClass = "bg-blue-600";
+                                    textClass = "text-white font-bold";
+                                } else if (day && (isYesterday(day) || isTomorrow(day))) {
+                                    bgClass = "bg-blue-50"; 
+                                    textClass = "text-blue-600 font-semibold";
+                                }
+
+                                return (
+                                    <div 
+                                        key={index}
+                                        onClick={() => handleDateClick(day)}
+                                        className={`
+                                            aspect-[4/5] sm:aspect-square 
+                                            flex items-center justify-center 
+                                            text-lg sm:text-2xl 
+                                            relative
+                                            transition-colors duration-200
+                                            ${bgClass} ${textClass}
+                                            ${clickable ? 'cursor-pointer hover:bg-opacity-80 active:bg-blue-200' : ''}
+                                            ${today ? 'hover:bg-blue-700' : ''}
+                                        `}
+                                    >
+                                        {day}
+                                        
+                                        {/* Little dot indicators for Yesterday/Tomorrow for visual aid */}
+                                        {day && isYesterday(day) && (
+                                            <span className="absolute bottom-1 w-1 h-1 rounded-full bg-blue-400 opacity-50"></span>
+                                        )}
+                                        {day && isTomorrow(day) && (
+                                            <span className="absolute bottom-1 w-1 h-1 rounded-full bg-blue-400 opacity-50"></span>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    <div className="mt-6 text-center text-slate-400 text-sm max-w-xs">
+                        <p>Turn up your volume.</p>
+                        <p>Tap headers or dates to hear them read aloud in English and Chinese.</p>
+                    </div>
+
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>
