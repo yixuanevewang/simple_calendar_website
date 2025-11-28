@@ -3,46 +3,244 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Interactive Learning Calendar</title>
+    <title>Interactive Learning Calendar (Large)</title>
     
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- React and ReactDOM -->
-    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-    
-    <!-- Babel for JSX -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
     <style>
+        /* Base Reset & Variables */
+        :root {
+            --bg-color: #f0f9ff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --accent-blue: #2563eb;
+            --accent-light: #eff6ff;
+            --white: #ffffff;
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
         body {
-            background-color: #f0f9ff;
-            touch-action: manipulation; /* Improves touch response */
-        }
-        .calendar-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 0.5rem;
-        }
-        /* Hide scrollbar for clean look */
-        ::-webkit-scrollbar {
-            display: none;
-        }
-        /* Prevent text selection to make it feel more like an app */
-        .no-select {
+            background-color: var(--bg-color);
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden; /* No scroll */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: manipulation;
             user-select: none;
             -webkit-user-select: none;
         }
+
+        /* Main Container - fills most of the screen */
+        .container {
+            width: 96vw;
+            height: 96vh;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5vh;
+        }
+
+        /* Header Section */
+        .header-card {
+            background: var(--white);
+            border-radius: 20px;
+            padding: 1.5vh;
+            text-align: center;
+            box-shadow: var(--shadow);
+            flex-shrink: 0; /* Don't shrink */
+            display: flex;
+            flex-direction: row; /* Changed to row for side-by-side */
+            justify-content: center;
+            align-items: center; /* Vertically align centers */
+            height: 18vh; /* Fixed height portion for header */
+            gap: 2vh; /* Space between Month and Year */
+        }
+
+        .month-title {
+            font-size: 8vh; /* Responsive font size based on height */
+            font-weight: 800;
+            color: var(--text-primary);
+            line-height: 1;
+            cursor: pointer;
+            transition: color 0.2s;
+            padding: 0 10px;
+            margin: 0; /* Remove default margins */
+        }
+
+        .month-title:active {
+            color: var(--accent-blue);
+            opacity: 0.7;
+        }
+
+        .year-container {
+            margin-top: 0; /* Removed top margin */
+            display: flex;
+            align-items: baseline; /* Align text baselines */
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .year-text {
+            font-size: 8vh; /* Increased from 4vh to match Month */
+            color: var(--text-secondary);
+            font-weight: 500;
+            line-height: 1;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 8px;
+            transition: background-color 0.2s;
+        }
+
+        .year-text:active {
+            background-color: var(--accent-light);
+            color: var(--accent-blue);
+        }
+
+        .tap-hint {
+            font-size: 2vh;
+            color: #cbd5e1;
+            /* margin-top removed as it's now inline/baseline */
+        }
+
+        /* Calendar Section */
+        .calendar-card {
+            background: var(--white);
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            flex-grow: 1; /* Take up remaining height */
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Weekday Header */
+        .grid-header {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            background-color: #f8fafc;
+            border-bottom: 2px solid #e2e8f0;
+            height: 8vh; /* Fixed height for weekday names */
+        }
+
+        .weekday-cell {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border-right: 1px solid #f1f5f9;
+        }
+        .weekday-cell:last-child { border-right: none; }
+
+        .weekday-cell:active {
+            background-color: #dbeafe;
+        }
+
+        .weekday-text {
+            font-size: 3vh; /* Large text */
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        /* Days Grid */
+        .grid-days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            /* Auto-fill rows to fill the remaining height equally */
+            grid-auto-rows: 1fr; 
+            flex-grow: 1;
+            background-color: #e2e8f0; /* Borders */
+            gap: 2px;
+            padding: 2px;
+        }
+
+        .day-cell {
+            background-color: var(--white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 5vh; /* Very large numbers */
+            font-weight: 500;
+            position: relative;
+            cursor: pointer;
+            color: var(--text-primary);
+            transition: background-color 0.2s;
+        }
+
+        .day-cell:active {
+            background-color: #bfdbfe;
+        }
+
+        /* States */
+        .day-cell.today {
+            background-color: var(--accent-blue);
+            color: var(--white);
+            font-weight: 800;
+            font-size: 6vh; /* Pop even more */
+        }
+        
+        .day-cell.today:active {
+            background-color: #1d4ed8;
+        }
+
+        .day-cell.near-date { /* Yesterday/Tomorrow */
+            background-color: #eff6ff;
+            color: var(--accent-blue);
+            font-weight: 700;
+        }
+
+        /* Indicators */
+        .dot-indicator {
+            position: absolute;
+            bottom: 1.5vh;
+            width: 1.2vh;
+            height: 1.2vh;
+            background-color: #60a5fa;
+            border-radius: 50%;
+        }
+
+        .day-cell.today .dot-indicator {
+            background-color: var(--white);
+            opacity: 0.8;
+        }
+
     </style>
 </head>
 <body>
-    <div id="root"></div>
 
-    <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+    <div class="container">
+        <!-- Header -->
+        <div class="header-card" id="headerCard">
+            <!-- Placeholders will be replaced by JS immediately -->
+            <div class="month-title" id="monthDisplay">...</div>
+            <div class="year-container">
+                <span class="year-text" id="yearDisplay">...</span>
+                <span class="tap-hint">(Tap text to listen)</span>
+            </div>
+        </div>
 
-        // Data Helpers
+        <!-- Calendar -->
+        <div class="calendar-card">
+            <!-- Weekdays -->
+            <div class="grid-header" id="weekdayHeader">
+                <!-- Injected via JS -->
+            </div>
+            
+            <!-- Days -->
+            <div class="grid-days" id="calendarGrid">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Data ---
         const WEEKDAYS = [
             { en: 'Sunday', zh: '星期日' },
             { en: 'Monday', zh: '星期一' },
@@ -68,227 +266,183 @@
             { en: 'December', zh: '十二月' }
         ];
 
-        // Speech Helper Function
-        const speak = (textEn, textZh) => {
+        // --- State ---
+        // Uses System Time automatically
+        let currentDate = new Date();
+
+        // --- Speech Logic ---
+        function speak(textEn, textZh) {
             if (!window.speechSynthesis) return;
 
-            // Cancel any current speech
             window.speechSynthesis.cancel();
 
-            // English Utterance
             const utteranceEn = new SpeechSynthesisUtterance(textEn);
             utteranceEn.lang = 'en-US';
-            utteranceEn.rate = 0.8; // Slower speed
+            utteranceEn.rate = 0.5; // Slow
 
-            // Chinese Utterance
             const utteranceZh = new SpeechSynthesisUtterance(textZh);
             utteranceZh.lang = 'zh-CN';
-            utteranceZh.rate = 0.8; 
+            utteranceZh.rate = 0.5; // Slow
 
-            // Chain them: Play Chinese only after English finishes
-            // This fixes the issue on iOS/Android where they overlap or cancel out
             utteranceEn.onend = () => {
                 window.speechSynthesis.speak(utteranceZh);
             };
 
             window.speechSynthesis.speak(utteranceEn);
-        };
+        }
 
-        const App = () => {
-            const [now, setNow] = useState(new Date());
+        // --- Helpers ---
+        function getOrdinal(n) {
+            const s = ["th", "st", "nd", "rd"];
+            const v = n % 100;
+            return n + (s[(v - 20) % 10] || s[v] || s[0]);
+        }
 
-            // Update time every minute to catch midnight transitions
-            useEffect(() => {
-                const timer = setInterval(() => {
-                    setNow(new Date());
-                }, 60000);
-                return () => clearInterval(timer);
-            }, []);
+        function isSameDay(d1, d2) {
+            return d1.getFullYear() === d2.getFullYear() &&
+                   d1.getMonth() === d2.getMonth() &&
+                   d1.getDate() === d2.getDate();
+        }
 
-            const currentYear = now.getFullYear();
-            const currentMonthIndex = now.getMonth();
-            const currentDay = now.getDate();
+        // --- Rendering ---
+        function renderCalendar() {
+            try {
+                // Refresh current date from system time
+                const now = new Date();
+                currentDate = now;
 
-            // Calendar Logic
-            const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
-            const getFirstDayOfMonth = (year, month) => new Date(year, month, 1).getDay();
+                const year = now.getFullYear();
+                const month = now.getMonth();
+                const todayDate = now.getDate();
 
-            const daysInMonth = getDaysInMonth(currentYear, currentMonthIndex);
-            const startDay = getFirstDayOfMonth(currentYear, currentMonthIndex);
-
-            // Generate calendar cells
-            const blanks = Array(startDay).fill(null);
-            const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-            const totalSlots = [...blanks, ...days];
-
-            // Date Comparison Helpers
-            const isToday = (day) => {
-                return day === currentDay;
-            };
-
-            const isYesterday = (day) => {
-                const checkDate = new Date(currentYear, currentMonthIndex, day);
-                const yesterday = new Date(now);
-                yesterday.setDate(now.getDate() - 1);
-                return checkDate.toDateString() === yesterday.toDateString();
-            };
-
-            const isTomorrow = (day) => {
-                const checkDate = new Date(currentYear, currentMonthIndex, day);
-                const tomorrow = new Date(now);
-                tomorrow.setDate(now.getDate() + 1);
-                return checkDate.toDateString() === tomorrow.toDateString();
-            };
-
-            // Click Handlers
-            const handleHeaderClick = () => {
-                const enText = `${MONTHS[currentMonthIndex].en} ${currentYear}`;
-                const zhText = `${currentYear}年 ${MONTHS[currentMonthIndex].zh}`;
-                speak(enText, zhText);
-            };
-
-            const handleWeekdayClick = (index) => {
-                speak(WEEKDAYS[index].en, WEEKDAYS[index].zh);
-            };
-
-            const handleDateClick = (day) => {
-                if (!day) return;
-
-                const dateObj = new Date(currentYear, currentMonthIndex, day);
-                const weekdayIndex = dateObj.getDay();
-                
-                // Helper to get ordinal suffix (st, nd, rd, th)
-                const getOrdinal = (n) => {
-                    const s = ["th", "st", "nd", "rd"];
-                    const v = n % 100;
-                    return n + (s[(v - 20) % 10] || s[v] || s[0]);
-                };
-
-                const dateStringEn = `${MONTHS[currentMonthIndex].en} ${getOrdinal(day)}, ${currentYear}`;
-                // Chinese date format: X年 X月 X日
-                const dateStringZh = `${currentYear}年${MONTHS[currentMonthIndex].zh}${day}日`;
-                const weekdayEn = WEEKDAYS[weekdayIndex].en;
-                const weekdayZh = WEEKDAYS[weekdayIndex].zh;
-
-                if (isToday(day)) {
-                    speak(
-                        `Today is ${weekdayEn}, ${dateStringEn}`, 
-                        `今天是${weekdayZh}, ${dateStringZh}`
-                    );
-                } else if (isYesterday(day)) {
-                    speak(
-                        `Yesterday was ${weekdayEn}, ${dateStringEn}`, 
-                        `昨天是${weekdayZh}, ${dateStringZh}`
-                    );
-                } else if (isTomorrow(day)) {
-                    speak(
-                        `Tomorrow is ${weekdayEn}, ${dateStringEn}`, 
-                        `明天是${weekdayZh}, ${dateStringZh}`
-                    );
-                } else {
-                    // Standard date reading
-                    speak(
-                        `${weekdayEn}, ${dateStringEn}`, 
-                        `${weekdayZh}, ${dateStringZh}`
-                    );
+                // Update Header
+                const monthTitle = document.getElementById('monthDisplay');
+                if (monthTitle) {
+                    monthTitle.textContent = MONTHS[month].en;
+                    monthTitle.onclick = (e) => {
+                        e.stopPropagation();
+                        speak(MONTHS[month].en, MONTHS[month].zh);
+                    };
                 }
-            };
+                
+                const yearDisplay = document.getElementById('yearDisplay');
+                if (yearDisplay) {
+                    yearDisplay.textContent = year;
+                    yearDisplay.onclick = (e) => {
+                        e.stopPropagation();
+                        speak(`${year}`, `${year}年`);
+                    };
+                }
 
-            return (
-                <div className="min-h-screen flex flex-col items-center justify-start py-6 px-2 sm:px-4 no-select">
-                    
-                    {/* Header Card */}
-                    <div 
-                        onClick={handleHeaderClick}
-                        className="bg-white w-full max-w-lg rounded-2xl shadow-lg p-6 mb-4 text-center cursor-pointer hover:bg-blue-50 transition-colors active:scale-95 transform duration-150"
-                    >
-                        <h1 className="text-4xl sm:text-5xl font-bold text-slate-800">
-                            {MONTHS[currentMonthIndex].en}
-                        </h1>
-                        <h2 className="text-2xl sm:text-3xl text-slate-500 mt-2 font-medium">
-                            {currentYear}
-                        </h2>
-                        <p className="text-xs text-slate-300 mt-2">(Tap to listen / 点击听)</p>
-                    </div>
+                // Render Weekdays
+                const weekdayContainer = document.getElementById('weekdayHeader');
+                if (weekdayContainer) {
+                    weekdayContainer.innerHTML = '';
+                    WEEKDAYS.forEach((day, index) => {
+                        const cell = document.createElement('div');
+                        cell.className = 'weekday-cell';
+                        cell.innerHTML = `<span class="weekday-text">${day.en}</span>`;
+                        cell.onclick = () => speak(day.en, day.zh);
+                        weekdayContainer.appendChild(cell);
+                    });
+                }
 
-                    {/* Calendar Grid Container */}
-                    <div className="bg-white w-full max-w-lg rounded-2xl shadow-xl overflow-hidden">
+                // Render Days
+                const daysContainer = document.getElementById('calendarGrid');
+                if (daysContainer) {
+                    daysContainer.innerHTML = '';
+
+                    const daysInMonth = new Date(year, month + 1, 0).getDate();
+                    const firstDayIndex = new Date(year, month, 1).getDay();
+
+                    // Add Blanks
+                    for (let i = 0; i < firstDayIndex; i++) {
+                        const blank = document.createElement('div');
+                        blank.className = 'day-cell';
+                        blank.style.cursor = 'default';
+                        blank.style.backgroundColor = '#f8fafc'; 
+                        daysContainer.appendChild(blank);
+                    }
+
+                    // Add Days
+                    for (let i = 1; i <= daysInMonth; i++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'day-cell';
+                        cell.textContent = i;
+
+                        const cellDate = new Date(year, month, i);
+                        const realNow = new Date();
                         
-                        {/* Weekday Headers */}
-                        <div className="grid grid-cols-7 bg-slate-100 border-b border-slate-200">
-                            {WEEKDAYS.map((day, index) => (
-                                <div 
-                                    key={day.en}
-                                    onClick={() => handleWeekdayClick(index)}
-                                    className="h-14 sm:h-16 flex items-center justify-center p-1 cursor-pointer hover:bg-blue-100 transition-colors"
-                                >
-                                    {/* Responsive text: Small on mobile to fit "Wednesday", larger on desktop */}
-                                    <span className="text-[0.65rem] sm:text-sm font-bold text-slate-600 uppercase tracking-tight break-words text-center leading-tight">
-                                        {day.en}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
+                        const yesterday = new Date(realNow);
+                        yesterday.setDate(realNow.getDate() - 1);
+                        
+                        const tomorrow = new Date(realNow);
+                        tomorrow.setDate(realNow.getDate() + 1);
 
-                        {/* Days Grid */}
-                        <div className="grid grid-cols-7 gap-px bg-slate-200">
-                            {totalSlots.map((day, index) => {
-                                // Determine styling based on date status
-                                const today = day && isToday(day);
-                                const clickable = !!day;
-                                
-                                let bgClass = "bg-white"; // Default
-                                let textClass = "text-slate-700";
-                                
-                                if (today) {
-                                    bgClass = "bg-blue-600";
-                                    textClass = "text-white font-bold";
-                                } else if (day && (isYesterday(day) || isTomorrow(day))) {
-                                    bgClass = "bg-blue-50"; 
-                                    textClass = "text-blue-600 font-semibold";
-                                }
+                        const isToday = isSameDay(cellDate, realNow);
+                        const isYest = isSameDay(cellDate, yesterday);
+                        const isTom = isSameDay(cellDate, tomorrow);
 
-                                return (
-                                    <div 
-                                        key={index}
-                                        onClick={() => handleDateClick(day)}
-                                        className={`
-                                            aspect-[4/5] sm:aspect-square 
-                                            flex items-center justify-center 
-                                            text-lg sm:text-2xl 
-                                            relative
-                                            transition-colors duration-200
-                                            ${bgClass} ${textClass}
-                                            ${clickable ? 'cursor-pointer hover:bg-opacity-80 active:bg-blue-200' : ''}
-                                            ${today ? 'hover:bg-blue-700' : ''}
-                                        `}
-                                    >
-                                        {day}
-                                        
-                                        {/* Little dot indicators for Yesterday/Tomorrow for visual aid */}
-                                        {day && isYesterday(day) && (
-                                            <span className="absolute bottom-1 w-1 h-1 rounded-full bg-blue-400 opacity-50"></span>
-                                        )}
-                                        {day && isTomorrow(day) && (
-                                            <span className="absolute bottom-1 w-1 h-1 rounded-full bg-blue-400 opacity-50"></span>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
+                        if (isToday) {
+                            cell.classList.add('today');
+                            const dot = document.createElement('div');
+                            dot.className = 'dot-indicator';
+                            cell.appendChild(dot);
+                        } else if (isYest || isTom) {
+                            cell.classList.add('near-date');
+                            const dot = document.createElement('div');
+                            dot.className = 'dot-indicator';
+                            cell.appendChild(dot);
+                        }
 
-                    <div className="mt-6 text-center text-slate-400 text-sm max-w-xs">
-                        <p>Turn up your volume.</p>
-                        <p>Tap headers or dates to hear them read aloud in English and Chinese.</p>
-                    </div>
+                        cell.onclick = () => {
+                            const weekdayIndex = cellDate.getDay();
+                            const dateStringEn = `${MONTHS[month].en} ${getOrdinal(i)}, ${year}`;
+                            const dateStringZh = `${year}年${MONTHS[month].zh}${i}日`;
+                            const weekdayEn = WEEKDAYS[weekdayIndex].en;
+                            const weekdayZh = WEEKDAYS[weekdayIndex].zh;
 
-                </div>
-            );
-        };
+                            if (isToday) {
+                                speak(`Today is ${weekdayEn}, ${dateStringEn}`, `今天是${weekdayZh}, ${dateStringZh}`);
+                            } else if (isYest) {
+                                speak(`Yesterday was ${weekdayEn}, ${dateStringEn}`, `昨天是${weekdayZh}, ${dateStringZh}`);
+                            } else if (isTom) {
+                                speak(`Tomorrow is ${weekdayEn}, ${dateStringEn}`, `明天是${weekdayZh}, ${dateStringZh}`);
+                            } else {
+                                speak(`${weekdayEn}, ${dateStringEn}`, `${weekdayZh}, ${dateStringZh}`);
+                            }
+                        };
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+                        daysContainer.appendChild(cell);
+                    }
+
+                    // Fill remaining slots
+                    const totalCells = firstDayIndex + daysInMonth;
+                    const remaining = 7 - (totalCells % 7);
+                    if (remaining < 7) {
+                        for (let i = 0; i < remaining; i++) {
+                            const blank = document.createElement('div');
+                            blank.className = 'day-cell';
+                            blank.style.cursor = 'default';
+                            blank.style.backgroundColor = '#f8fafc';
+                            daysContainer.appendChild(blank);
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("Calendar render error:", err);
+            }
+        }
+
+        // Initialize immediately as the DOM elements above are already parsed
+        renderCalendar();
+
+        // Also add listener as fallback
+        window.addEventListener('load', renderCalendar);
+
+        // Auto-refresh every minute
+        setInterval(renderCalendar, 60000);
+
     </script>
 </body>
 </html>
