@@ -50,7 +50,7 @@
         .header-card {
             background: var(--white);
             border-radius: 20px;
-            padding: 1.5vh;
+            padding: 1vh 2vh;
             text-align: center;
             box-shadow: var(--shadow);
             flex-shrink: 0; /* Don't shrink */
@@ -58,54 +58,63 @@
             flex-direction: row; /* Changed to row for side-by-side */
             justify-content: center;
             align-items: center; /* Vertically align centers */
-            height: 18vh; /* Fixed height portion for header */
-            gap: 2vh; /* Space between Month and Year */
+            height: 20vh; /* Slightly taller to accommodate dual text */
+            gap: 4vh; /* Space between Month and Year */
         }
 
-        .month-title {
-            font-size: 8vh; /* Responsive font size based on height */
+        .month-block {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 8px;
+        }
+
+        .month-en {
+            font-size: 7vh; 
             font-weight: 800;
             color: var(--text-primary);
             line-height: 1;
-            cursor: pointer;
             transition: all 0.2s;
-            padding: 0 10px;
-            margin: 0; /* Remove default margins */
         }
 
-        .month-title:active {
-            color: var(--accent-blue);
-            opacity: 0.7;
+        .month-zh {
+            font-size: 3.5vh;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-top: 0.5vh;
+            transition: all 0.2s;
         }
 
         .year-container {
-            margin-top: 0; /* Removed top margin */
             display: flex;
-            align-items: baseline; /* Align text baselines */
-            justify-content: center;
-            gap: 15px;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 8px;
         }
 
         .year-text {
-            font-size: 8vh; /* Increased from 4vh to match Month */
+            font-size: 7vh; 
             color: var(--text-secondary);
             font-weight: 500;
             line-height: 1;
-            cursor: pointer;
-            padding: 5px 10px;
-            border-radius: 8px;
             transition: all 0.2s;
         }
-
-        .year-text:active {
-            background-color: var(--accent-light);
-            color: var(--accent-blue);
+        
+        /* Placeholder for year subtitle if needed, or just visual balance */
+        .year-sub {
+            font-size: 2vh;
+            color: transparent; /* Keep layout stable */
+            margin-top: 0.5vh;
         }
 
         .tap-hint {
-            font-size: 2vh;
+            font-size: 1.8vh;
             color: #cbd5e1;
-            /* margin-top removed as it's now inline/baseline */
+            margin-top: 0.5vh;
         }
 
         /* Calendar Section */
@@ -125,16 +134,18 @@
             grid-template-columns: repeat(7, 1fr);
             background-color: #f8fafc;
             border-bottom: 2px solid #e2e8f0;
-            height: 8vh; /* Fixed height for weekday names */
+            height: 10vh; /* Taller for dual language */
         }
 
         .weekday-cell {
             display: flex;
+            flex-direction: column; /* Stack EN and ZH */
             align-items: center;
             justify-content: center;
             cursor: pointer;
             border-right: 1px solid #f1f5f9;
             transition: background-color 0.2s;
+            padding: 0.5vh 0;
         }
         .weekday-cell:last-child { border-right: none; }
 
@@ -142,11 +153,19 @@
             background-color: #dbeafe;
         }
 
-        .weekday-text {
-            font-size: 3vh; /* Large text */
+        .weekday-en {
+            font-size: 2.2vh; 
             font-weight: 700;
             color: var(--text-secondary);
             text-transform: uppercase;
+            transition: color 0.2s;
+        }
+
+        .weekday-zh {
+            font-size: 1.8vh;
+            font-weight: 400;
+            color: #94a3b8;
+            margin-top: 0.5vh;
             transition: color 0.2s;
         }
 
@@ -168,13 +187,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 5vh; /* Very large numbers */
+            font-size: 4.5vh; /* Slightly smaller to accommodate header growth */
             font-weight: 500;
             position: relative;
             cursor: pointer;
             color: var(--text-primary);
             transition: background-color 0.2s, border-color 0.2s;
-            border: 4px solid transparent; /* Add transparent border to prevent layout shift */
+            border: 4px solid transparent; 
         }
 
         .day-cell:active {
@@ -186,7 +205,7 @@
             background-color: var(--accent-blue);
             color: var(--white);
             font-weight: 800;
-            font-size: 6vh; /* Pop even more */
+            font-size: 5.5vh; 
         }
         
         .day-cell.today:active {
@@ -202,9 +221,9 @@
         /* Indicators */
         .dot-indicator {
             position: absolute;
-            bottom: 0.5vh; /* UPDATED: Moved further down (was 1.5vh) */
-            width: 1.2vh;
-            height: 1.2vh;
+            bottom: 0.5vh; 
+            width: 1vh;
+            height: 1vh;
             background-color: #60a5fa;
             border-radius: 50%;
         }
@@ -219,19 +238,20 @@
         /* For the Date Box */
         .day-cell.speaking {
             border-color: var(--accent-blue); 
-            background-color: #dbeafe; /* Light blue highlight */
+            background-color: #dbeafe; 
         }
         
         .day-cell.today.speaking {
             border-color: var(--white);
-            background-color: #1e40af; /* Darker blue highlight */
+            background-color: #1e40af; 
         }
 
-        /* For Text Headers (Month, Year, Weekdays) */
+        /* For Text Headers */
         .text-highlight {
             color: var(--accent-blue) !important;
             transform: scale(1.1);
             text-shadow: 0 0 10px rgba(37, 99, 235, 0.3);
+            font-weight: 800;
         }
 
     </style>
@@ -241,9 +261,14 @@
     <div class="container">
         <!-- Header -->
         <div class="header-card" id="headerCard">
-            <!-- Placeholders will be replaced by JS immediately -->
-            <div class="month-title" id="monthDisplay">...</div>
-            <div class="year-container">
+            <!-- Month Container -->
+            <div class="month-block" id="monthBlock">
+                <div class="month-en" id="monthEn">...</div>
+                <div class="month-zh" id="monthZh">...</div>
+            </div>
+            
+            <!-- Year Container -->
+            <div class="year-container" id="yearBlock">
                 <span class="year-text" id="yearDisplay">...</span>
                 <span class="tap-hint">(Tap text to listen)</span>
             </div>
@@ -293,17 +318,13 @@
         // --- State ---
         let currentDate = new Date();
 
-        // --- NEW Advanced Speech Logic (Sequential/Karaoke) ---
-        
-        // This function manages a strict queue of speech events
-        // It plays one segment, highlights its element, waits for end, un-highlights, then plays next.
+        // --- Speech Logic ---
         function playSequence(segments) {
             if (!window.speechSynthesis) return;
 
-            // 1. Clear any existing speech
             window.speechSynthesis.cancel();
 
-            // 2. Remove any stuck highlights from previous runs
+            // Clear old highlights
             document.querySelectorAll('.speaking, .text-highlight').forEach(el => {
                 el.classList.remove('speaking', 'text-highlight');
             });
@@ -316,9 +337,9 @@
                 const seg = segments[index];
                 const utterance = new SpeechSynthesisUtterance(seg.text);
                 utterance.lang = seg.lang;
-                utterance.rate = 0.4; // Keep it slow
+                utterance.rate = 0.4; 
 
-                // START Event: Turn ON highlight
+                // Highlight ON
                 utterance.onstart = () => {
                     if (seg.el) {
                         if (seg.el.classList.contains('day-cell')) {
@@ -329,24 +350,22 @@
                     }
                 };
 
-                // END/ERROR Event: Turn OFF highlight and play NEXT
+                // Highlight OFF & Next
                 const finish = () => {
                     if (seg.el) {
                         seg.el.classList.remove('speaking');
                         seg.el.classList.remove('text-highlight');
                     }
                     index++;
-                    playNext(); // Recursively call next
+                    playNext();
                 };
 
                 utterance.onend = finish;
                 utterance.onerror = finish;
 
-                // Speak it
                 window.speechSynthesis.speak(utterance);
             }
 
-            // Start the chain
             playNext();
         }
 
@@ -373,26 +392,32 @@
                 const month = now.getMonth();
 
                 // 1. Setup Header Elements
-                const monthTitle = document.getElementById('monthDisplay');
+                const monthBlock = document.getElementById('monthBlock');
+                const monthEnEl = document.getElementById('monthEn');
+                const monthZhEl = document.getElementById('monthZh');
+                
+                const yearBlock = document.getElementById('yearBlock');
                 const yearDisplay = document.getElementById('yearDisplay');
                 
-                if (monthTitle) {
-                    monthTitle.textContent = MONTHS[month].en;
-                    monthTitle.onclick = (e) => {
+                if (monthEnEl && monthZhEl) {
+                    monthEnEl.textContent = MONTHS[month].en;
+                    monthZhEl.textContent = MONTHS[month].zh;
+                    
+                    monthBlock.onclick = (e) => {
                         e.stopPropagation();
-                        // Sequence: En -> Zh (Highlight Month only)
+                        // Highlight En, then Zh specific elements
                         playSequence([
-                            { text: MONTHS[month].en, lang: 'en-US', el: monthTitle },
-                            { text: MONTHS[month].zh, lang: 'zh-CN', el: monthTitle }
+                            { text: MONTHS[month].en, lang: 'en-US', el: monthEnEl },
+                            { text: MONTHS[month].zh, lang: 'zh-CN', el: monthZhEl }
                         ]);
                     };
                 }
                 
                 if (yearDisplay) {
                     yearDisplay.textContent = year;
-                    yearDisplay.onclick = (e) => {
+                    yearBlock.onclick = (e) => {
                         e.stopPropagation();
-                        // Sequence: En -> Zh (Highlight Year only)
+                        // Highlight Year (shared element)
                         playSequence([
                             { text: `${year}`, lang: 'en-US', el: yearDisplay },
                             { text: `${year}年`, lang: 'zh-CN', el: yearDisplay }
@@ -402,7 +427,8 @@
 
                 // 2. Render Weekdays
                 const weekdayContainer = document.getElementById('weekdayHeader');
-                const weekdayElements = []; // Store references for easy access
+                // Store references to separate EN/ZH elements for each day
+                const weekdayRefs = []; 
 
                 if (weekdayContainer) {
                     weekdayContainer.innerHTML = '';
@@ -411,22 +437,26 @@
                         cell.className = 'weekday-cell';
                         cell.id = `weekday-${index}`; 
                         
-                        const textSpan = document.createElement('span');
-                        textSpan.className = 'weekday-text';
-                        textSpan.textContent = day.en;
+                        const textEn = document.createElement('span');
+                        textEn.className = 'weekday-en';
+                        textEn.textContent = day.en;
                         
-                        cell.appendChild(textSpan);
+                        const textZh = document.createElement('span');
+                        textZh.className = 'weekday-zh';
+                        textZh.textContent = day.zh;
+                        
+                        cell.appendChild(textEn);
+                        cell.appendChild(textZh);
                         
                         cell.onclick = () => {
-                            // Sequence: En -> Zh (Highlight Weekday only)
                             playSequence([
-                                { text: day.en, lang: 'en-US', el: textSpan },
-                                { text: day.zh, lang: 'zh-CN', el: textSpan }
+                                { text: day.en, lang: 'en-US', el: textEn },
+                                { text: day.zh, lang: 'zh-CN', el: textZh }
                             ]);
                         };
                         
                         weekdayContainer.appendChild(cell);
-                        weekdayElements.push(textSpan);
+                        weekdayRefs.push({ en: textEn, zh: textZh });
                     });
                 }
 
@@ -438,7 +468,7 @@
                     const daysInMonth = new Date(year, month + 1, 0).getDate();
                     const firstDayIndex = new Date(year, month, 1).getDay();
 
-                    // Add Blanks
+                    // Blanks
                     for (let i = 0; i < firstDayIndex; i++) {
                         const blank = document.createElement('div');
                         blank.className = 'day-cell';
@@ -447,7 +477,7 @@
                         daysContainer.appendChild(blank);
                     }
 
-                    // Add Days
+                    // Days
                     for (let i = 1; i <= daysInMonth; i++) {
                         const cell = document.createElement('div');
                         cell.className = 'day-cell';
@@ -495,36 +525,24 @@
                                 prefixZh = "明天是 ";
                             }
 
-                            // Build the Karaoke Sequence
+                            // Karaoke Sequence
                             const sequence = [
                                 // --- ENGLISH ---
-                                // 1. Prefix (No Highlight)
                                 { text: prefixEn, lang: 'en-US', el: null },
-                                // 2. Weekday
-                                { text: `${WEEKDAYS[weekdayIndex].en},`, lang: 'en-US', el: weekdayElements[weekdayIndex] },
-                                // 3. Month
-                                { text: MONTHS[month].en, lang: 'en-US', el: monthTitle },
-                                // 4. Day Number
+                                { text: `${WEEKDAYS[weekdayIndex].en},`, lang: 'en-US', el: weekdayRefs[weekdayIndex].en },
+                                { text: MONTHS[month].en, lang: 'en-US', el: monthEnEl },
                                 { text: `${getOrdinal(i)},`, lang: 'en-US', el: cell },
-                                // 5. Year
                                 { text: `${year}.`, lang: 'en-US', el: yearDisplay },
                                 
                                 // --- CHINESE ---
-                                // 1. Prefix (No Highlight)
                                 { text: prefixZh, lang: 'zh-CN', el: null },
-                                // 2. Weekday
-                                { text: `${WEEKDAYS[weekdayIndex].zh},`, lang: 'zh-CN', el: weekdayElements[weekdayIndex] },
-                                // 3. Year (Chinese says Year first)
+                                { text: `${WEEKDAYS[weekdayIndex].zh},`, lang: 'zh-CN', el: weekdayRefs[weekdayIndex].zh },
                                 { text: `${year}年`, lang: 'zh-CN', el: yearDisplay },
-                                // 4. Month
-                                { text: `${MONTHS[month].zh}`, lang: 'zh-CN', el: monthTitle },
-                                // 5. Day Number
+                                { text: `${MONTHS[month].zh}`, lang: 'zh-CN', el: monthZhEl },
                                 { text: `${i}日`, lang: 'zh-CN', el: cell }
                             ];
                             
-                            // Remove empty prefixes if not today/yest/tom
                             const finalSequence = sequence.filter(s => s.text !== "");
-
                             playSequence(finalSequence);
                         };
 
